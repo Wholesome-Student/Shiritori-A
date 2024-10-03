@@ -1,14 +1,25 @@
 import { serve } from 'http/server.ts';
 import { serveDir } from 'http/file_server.ts';
 
+
 let users = {};
 let sockets = [];
 let currentTurn = null; // 現在のターンを管理する変数
 let history = ["しりとり"]; // しりとりの履歴
+let suffixMatch = 1;
+let minimumStringLength = 2;
+let isReverse = false;
 
 serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
+  
+    // リセット処理
+  if (request.method === "POST" && pathname === "/reset") {
+    history = ["しりとり"];
+    previousWord = "しりとり";
+    return new Response(previousWord);
+  }
 
   if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
     const { response, socket } = Deno.upgradeWebSocket(req);
@@ -59,7 +70,19 @@ serve((req) => {
                 message: '過去に登場したことばです。',
                 errorCode: '10003'
               }));
-            } else {
+            } else if (nextWord.length < minimumStringLength) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '文字数が不足しています',
+                errorCode: '10004'
+              }));
+            } else if (cardId === 0 && cardOption > nextWord.length) {
+                socket.send(JSON.stringify({
+                type: 'error',
+                message: '文字数が不足しているため、カードが使えません。',
+                errorCode: '10005'
+              }));
+        } else {
               history.push(nextWord);
               broadcastMessage(data.username, nextWord);
               switchTurn(data.username);
@@ -74,6 +97,23 @@ serve((req) => {
         console.error('Error processing message:', error);
       }
     };
+    
+        if (cardId !== undefined) {
+      if (cardId === 0) {
+        // 後方一致変更カード
+        if (cardOption !== undefined) {
+          suffixMatch = cardOption;
+        }
+      } else if (cardId === 1) {
+        // 文字数下限変更カード
+        if (cardOption !== undefined) {
+          minimumStringLength = cardOption;
+        }
+      } else if (cardId === 2) {
+        // リバースカード
+        isReverse = !isReverse;
+      }
+    }
 
     socket.onclose = () => {
       const username = Object.keys(users).find(key => users[key].socket === socket);
