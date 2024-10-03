@@ -87,6 +87,17 @@ Deno.serve(async (request) => {
           headers: { "Content-Type": "application/json; charset=utf-8" },
         }
       );
+    } else if (cardId === 0 && cardOption > nextWord.length) {
+      return new Response(
+        JSON.stringify({
+          errorMessage: "文字数が不足しているため、カードが使えません。",
+          errorCode: "10005",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
     } else {
       // 正答
       history.push(nextWord);
