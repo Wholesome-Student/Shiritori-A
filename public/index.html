@@ -12,38 +12,53 @@
 
   <!-- bodyタグの中には実際に表示するものなどを書く -->
   <body>
-    <div class="tytle">
-      <h1>しりとり</h1>
-    </div>
-    <!-- 相手情報 -->
-    <div class="opponent">
-      <!-- 現在の単語を表示する場所 -->
-      <div class="previous">
-        <p>前の単語</p>
-        <p id="previousWord">しりとり</p>
+    <sub>
+      <div class="preparation">
+        <!-- 次の文字を入力するフォーム -->
+        <input id="name" type="text" />
+        <button id="nameButton">名前設定</button>
       </div>
-      <!-- 相手発動カード -->
-      <div class="previousCards">
-        <div class="previousCard"></div>
+      <div class="conplete">
+        <button id="completeButton">準備完了</button>
       </div>
-    </div>
-    <!-- 条件 -->
-    <div class="rules">
-      <p id="rule">※７文字以上</p>
-    </div>
-    <div class="next">
-      <!-- 次の文字を入力するフォーム -->
-      <input id="nextWordInput" type="text" />
-      <button id="nextWordSendButton">送信</button>
-    </div>
-    <div class="cardStage">
-      <div class="card"></div>
-      <div class="card"></div>
-      <div class="card"></div>
-    </div>
-    <div class="reset">
-      <button id="resetSendButton">ゲームリセット</button>
-    </div>
+      <div class="history">
+
+      </div>
+    </sub>
+    <main>
+      <div class="tytle">
+        <h1>しりとり</h1>
+      </div>
+      <!-- 相手情報 -->
+      <div class="opponent">
+        <!-- 現在の単語を表示する場所 -->
+        <div class="previous">
+          <p>前の単語</p>
+          <p id="previousWord">しりとり</p>
+        </div>
+        <!-- 相手発動カード -->
+        <div class="previousCards">
+          <div class="previousCard"></div>
+        </div>
+      </div>
+      <!-- 条件 -->
+      <div class="rules">
+        <p id="rule">※７文字以上</p>
+      </div>
+      <div class="next">
+        <!-- 次の文字を入力するフォーム -->
+        <input id="nextWordInput" type="text" />
+        <button id="nextWordSendButton">送信</button>
+      </div>
+      <div class="cardStage">
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+      </div>
+      <div class="reset">
+        <button id="resetSendButton">ゲームリセット</button>
+      </div>
+    </main>
     
 
     <!-- JavaScriptを実行 -->
