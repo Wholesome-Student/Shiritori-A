@@ -1,5 +1,6 @@
 const socket = new WebSocket(`wss://${location.host}/ws`);
 let username = null;
+let selectedImageId = null;
 
 socket.addEventListener('error', (error) => {
   console.error(`websocket error:${error}`);
@@ -7,14 +8,20 @@ socket.addEventListener('error', (error) => {
 
 window.onload = () => {
   try {
-    const btn = document.getElementById('btn');
-    const input = document.getElementById('input');
-    const outputs = document.getElementById('outputs');
-    const readyBtn = document.getElementById('readyBtn');
-    const statusDiv = document.getElementById('status');
-    const usernameInput = document.getElementById('usernameInput');
-    const setUsernameBtn = document.getElementById('setUsernameBtn');
-    const resetBtn = document.getElementById('resetButton');
+    const btn = document.getElementById("btn");
+    const input = document.getElementById("input");
+    const outputs = document.getElementById("outputs");
+    const readyBtn = document.getElementById("readyBtn");
+    const statusDiv = document.getElementById("status");
+    const usernameInput = document.getElementById("usernameInput");
+    const setUsernameBtn = document.getElementById("setUsernameBtn");
+    const resetBtn = document.getElementById("resetButton");
+    const input2 = document.getElementById('input');
+
+    input2.addEventListener('input', function() {
+      // フィールドに入力された文字数に応じて幅を変更
+      input2.style.width = (this.value.length + 1) * 68 + 'px'; // 文字数に基づいて幅を計算
+    });
 
     if (
       !btn || !input || !outputs || !readyBtn || !statusDiv || !usernameInput ||
@@ -104,3 +111,24 @@ window.onload = () => {
     console.error(error);
   }
 };
+
+document.querySelectorAll(".card").forEach((img) => {
+  // 各画像にクリックイベントを設定
+  img.onclick = (event) => {
+      const clickedImg = event.target;
+      selectedImageId = clickedImg.getAttribute("data-id");
+
+      // クリックされた画像のハイライトをトグル（ON/OFF）する
+      clickedImg.classList.toggle("highlighted");
+
+      // 他の画像からハイライトを外す
+      document.querySelectorAll(".card").forEach((img) => {
+          if (img !== clickedImg) {
+          img.classList.remove("highlighted");
+          }
+      });
+      if (!clickedImg.classList.contains("highlighted")) {
+          selectedImageId = null;
+      }
+      };
+});
