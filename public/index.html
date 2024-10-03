@@ -6,19 +6,45 @@
 
     <link
       rel="stylesheet"
-      href="./dice-deno-shirit-93.deno.dev_files/styles.css"
+      href="style.css"
     />
   </head>
 
   <!-- bodyタグの中には実際に表示するものなどを書く -->
   <body>
-    <h1>しりとり</h1>
-    <!-- 現在の単語を表示する場所 -->
-    <p id="previousWord">前の単語: しりとり</p>
-    <!-- 次の文字を入力するフォーム -->
-    <input id="nextWordInput" type="text" />
-    <button id="nextWordSendButton">送信</button>
-    <button id="resetSendButton">リセット</button>
+    <div class="tytle">
+      <h1>しりとり</h1>
+    </div>
+    <!-- 相手情報 -->
+    <div class="opponent">
+      <!-- 現在の単語を表示する場所 -->
+      <div class="previous">
+        <p>前の単語</p>
+        <p id="previousWord">しりとり</p>
+      </div>
+      <!-- 相手発動カード -->
+      <div class="previousCards">
+        <div class="previousCard"></div>
+      </div>
+    </div>
+    <!-- 条件 -->
+    <div class="rules">
+      <p id="rule">※７文字以上</p>
+    </div>
+    <div class="next">
+      <!-- 次の文字を入力するフォーム -->
+      <input id="nextWordInput" type="text" />
+      <button id="nextWordSendButton">送信</button>
+    </div>
+    <div class="cardStage">
+      <div class="card"></div>
+      <div class="card"></div>
+      <div class="card"></div>
+    </div>
+    <div class="reset">
+      <button id="resetSendButton">ゲームリセット</button>
+    </div>
+    
 
     <!-- JavaScriptを実行 -->
     <script>
@@ -30,7 +56,7 @@
         // id: previousWordのタグを取得
         const paragraph = document.querySelector("#previousWord");
         // 取得したタグの中身を書き換える
-        paragraph.innerHTML = `前の単語: ${previousWord}`;
+        paragraph.innerHTML = `${previousWord}`;
       };
 
       // 送信ボタンの押下時に実行
@@ -73,7 +99,7 @@
         // id: previousWordのタグを取得
         const paragraph = document.querySelector("#previousWord");
         // 取得したタグの中身を書き換える
-        paragraph.innerHTML = `前の単語: ${previousWord}`;
+        paragraph.innerHTML = `${previousWord}`;
         // inputタグの中身を消去する
         nextWordInput.value = "";
       };
@@ -88,6 +114,14 @@
         // ページをリロードする
         window.location.reload();
       };
+
+      const input = document.getElementById('nextWordInput');
+
+      input.addEventListener('input', function() {
+        // フィールドに入力された文字数に応じて幅を変更
+        input.style.width = (this.value.length + 1) * 68 + 'px'; // 文字数に基づいて幅を計算
+      });
+
     </script>
   </body>
 </html>
