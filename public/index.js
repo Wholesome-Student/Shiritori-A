@@ -17,6 +17,7 @@ window.onload = () => {
     const setUsernameBtn = document.getElementById("setUsernameBtn");
     const resetBtn = document.getElementById("resetButton");
     const input2 = document.getElementById('input');
+    const previousWordParagraph = document.getElementById('previousWord');
 
     input2.addEventListener('input', function() {
       // フィールドに入力された文字数に応じて幅を変更
@@ -93,6 +94,7 @@ window.onload = () => {
       } else if (data.type === 'chat') {
         const li = document.createElement('li');
         li.textContent = `${data.sender}: ${data.message}`;
+        previousWordParagraph.textContent = data.message;
         outputs.appendChild(li);
         if (
           data.sender === 'System' && data.message === 'チャットを開始します！'
