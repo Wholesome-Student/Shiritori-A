@@ -1,53 +1,178 @@
-import { serveDir } from "https://deno.land/std@0.223.0/http/file_server.ts";
+import { serve } from 'http/server.ts';
+import { serveDir } from 'http/file_server.ts';
 
-let previousWord = "しりとり";
+let users = {};
+let sockets = [];
+let currentTurn = null; // 現在のターンを管理する変数
+let history = ["しりとり"]; // しりとりの履歴
+let suffixMatch = 1;
+let minimumStringLength = 2;
+let isReverse = false;
+let cardId = undefined;
 
-Deno.serve(async (request) => {
-  // パス名を取得する
-  // http://localhost:8000/hoge に接続した場合"/hoge"が取得できる
-  const pathname = new URL(request.url).pathname;
-  console.log(`pathname: ${pathname}`);
-
-  if (request.method === "GET" && pathname === "/shiritori") {
+serve((req) => {
+  const pathname = new URL(req.url).pathname;
+  console.log(pathname);
+  
+  // リセット処理
+  if (req.method === "POST" && pathname === "/reset") {
+    history = ["しりとり"];
+    previousWord = "しりとり";
     return new Response(previousWord);
   }
 
-  if (request.method === "POST" && pathname === "/shiritori") {
-    // リクエストのペイロードを取得
-    const requestJson = await request.json();
-    // JSONの中からnextWordを取得
-    const nextWord = requestJson["nextWord"];
+  if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
+    const { response, socket } = Deno.upgradeWebSocket(req);
+    
+    socket.onopen = () => {
+      sockets.push(socket);
+    };
 
-    // previousWordの末尾とnextWordの先頭が同一か確認
-    if (previousWord.slice(-1) === nextWord.slice(0, 1)) {
-      // 同一であれば、previousWordを更新
-      previousWord = nextWord;
-    } else {
-      return new Response(
-        JSON.stringify({
-          errorMessage: "前の単語に続いていません",
-          errorCode: "10001",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
+    socket.onmessage = async (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        console.log(`Received: ${JSON.stringify(data)}`);
+        
+        if (data.type === 'setUsername') {
+          if (users[data.username]) {
+            socket.send(JSON.stringify({ type: 'error', message: 'ユーザー名は既に使用されています' }));
+          } else {
+            users[data.username] = { socket, ready: false };
+            socket.send(JSON.stringify({ type: 'usernameSet', username: data.username }));
+          }
+        } else if (data.type === 'ready' && data.username) {
+          if (users[data.username]) {
+            users[data.username].ready = true;
+            checkAndStartChat();
+          } else {
+            console.error(`User ${data.username} not found`);
+          }
+        } else if (data.type === 'chat' && data.username) {
+          if (currentTurn === data.username) {
+            const nextWord = data.message;
+            const previousWord = history.slice(-1)[0];
+
+            if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '前の単語に続いていません',
+                errorCode: '10001'
+              }));
+            } else if (nextWord.slice(-1) === "ん") {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '「ん」で終わりました',
+                errorCode: '10002'
+              }));
+            } else if (history.includes(nextWord)) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '過去に登場したことばです。',
+                errorCode: '10003'
+              }));
+            } else if (nextWord.length < minimumStringLength) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '文字数が不足しています',
+                errorCode: '10004'
+              }));
+            } else if (cardId === 0 && cardOption > nextWord.length) {
+                socket.send(JSON.stringify({
+                type: 'error',
+                message: '文字数が不足しているため、カードが使えません。',
+                errorCode: '10005'
+              }));
+            } else {
+              history.push(nextWord);
+              broadcastMessage(data.username, nextWord);
+              switchTurn(data.username);
+            }
+          } else {
+            socket.send(JSON.stringify({ type: 'error', message: 'まだあなたのターンではありません' }));
+          }
+        } else if (data.type === 'reset') {
+          history = ["しりとり"];
+          broadcastMessage('System', 'リセットしましす');
+          checkAndStartChat();
+        } else {
+          console.error('Invalid message format:', data);
         }
-      );
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
+    };
+    
+    if (cardId !== undefined) {
+      if (cardId === 0) {
+        // 後方一致変更カード
+        if (cardOption !== undefined) {
+          suffixMatch = cardOption;
+        }
+      } else if (cardId === 1) {
+        // 文字数下限変更カード
+        if (cardOption !== undefined) {
+          minimumStringLength = cardOption;
+        }
+      } else if (cardId === 2) {
+        // リバースカード
+        isReverse = !isReverse;
+      }
     }
 
-    // 現在の単語を返す
-    return new Response(previousWord);
+    socket.onclose = () => {
+      const username = Object.keys(users).find(key => users[key].socket === socket);
+      if (username) {
+        delete users[username];
+      }
+      sockets = sockets.filter(s => s !== socket);
+    };
+
+    return response;
   }
 
-  // ./public以下のファイルを公開
-  return serveDir(request, {
-    /*
-             - fsRoot: 公開するフォルダを指定
-             - urlRoot: フォルダを展開するURLを指定。今回はlocalhost:8000/に直に展開する
-             - enableCors: CORSの設定を付加するか
-             */
-    fsRoot: "./public/",
-    urlRoot: "",
+  return serveDir(req, {
+    fsRoot: 'public',
+    urlRoot: '',
+    showDirListing: true,
     enableCors: true,
   });
 });
+
+function checkAndStartChat() {
+  const readyUsers = Object.values(users).filter(user => user.ready);
+  if (readyUsers.length === 2) {
+    broadcastMessage('System', 'チャットを開始します！');
+    broadcastMessage('System', 'しりとり');
+    currentTurn = Object.keys(users)[0]; // 最初のユーザーから開始
+    notifyTurn();
+  }
+}
+
+function broadcastMessage(sender, message) {
+  const messageObj = { type: 'chat', sender, message };
+  sockets.forEach((s) => {
+    try {
+      s.send(JSON.stringify(messageObj));
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  });
+}
+
+function switchTurn(currentUser) {
+  const usernames = Object.keys(users);
+  const nextUserIndex = (usernames.indexOf(currentUser) + 1) % usernames.length;
+  currentTurn = usernames[nextUserIndex];
+  notifyTurn();
+}
+
+function notifyTurn() {
+  const messageObj = { type: 'turn', username: currentTurn };
+  sockets.forEach((s) => {
+    try {
+      s.send(JSON.stringify(messageObj));
+    } catch (error) {
+      console.error('Failed to send turn notification:', error);
+    }
+  });
+}

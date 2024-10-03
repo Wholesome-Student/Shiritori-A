@@ -15,11 +15,11 @@
     <sub>
       <div class="preparation">
         <!-- 次の文字を入力するフォーム -->
-        <input id="name" type="text" />
-        <button id="nameButton">名前設定</button>
+        <input id="usernameInput" type="text" />
+        <button id="setUsernameBtn">名前設定</button>
       </div>
       <div class="conplete">
-        <button id="completeButton">準備完了</button>
+        <button id="readyBtn">準備完了</button>
       </div>
       <div class="history">
 
@@ -29,6 +29,9 @@
       <div class="tytle">
         <h1>しりとり</h1>
       </div>
+      <div id="status"></div>
+      <div id="previousWord"></div>
+      <ul id="outputs"></ul>
       <!-- 相手情報 -->
       <div class="opponent">
         <!-- 現在の単語を表示する場所 -->
@@ -47,8 +50,8 @@
       </div>
       <div class="next">
         <!-- 次の文字を入力するフォーム -->
-        <input id="nextWordInput" type="text" />
-        <button id="nextWordSendButton">送信</button>
+        <input id="input" type="text" />
+        <button id="btn">送信</button>
       </div>
       <div class="cardStage">
         <div class="card"></div>
@@ -56,7 +59,7 @@
         <div class="card"></div>
       </div>
       <div class="reset">
-        <button id="resetSendButton">ゲームリセット</button>
+        <button id="resetButton">ゲームリセット</button>
       </div>
     </main>
     
@@ -138,5 +141,6 @@
       });
 
     </script>
+    <script src="index.js"></script>
   </body>
 </html>
