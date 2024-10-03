@@ -14,6 +14,7 @@ window.onload = () => {
     const statusDiv = document.getElementById("status");
     const usernameInput = document.getElementById("usernameInput");
     const setUsernameBtn = document.getElementById("setUsernameBtn");
+    const resetBtn = document.getElementById("resetButton");
 
     if (!btn || !input || !outputs || !readyBtn || !statusDiv || !usernameInput || !setUsernameBtn) {
       throw new Error("Required DOM is not found.");
@@ -49,6 +50,12 @@ window.onload = () => {
       } else {
         console.error("Username not set");
         statusDiv.textContent = "エラー: ユーザー名が設定されていません";
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (confirm("リセットしますか？")) {
+        socket.send(JSON.stringify({ type: 'reset' }));
       }
     });
 

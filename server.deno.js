@@ -1,7 +1,6 @@
 import { serve } from 'http/server.ts';
 import { serveDir } from 'http/file_server.ts';
 
-
 let users = {};
 let sockets = [];
 let currentTurn = null; // 現在のターンを管理する変数
@@ -15,7 +14,7 @@ serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
   
-    // リセット処理
+  // リセット処理
   if (req.method === "POST" && pathname === "/reset") {
     history = ["しりとり"];
     previousWord = "しりとり";
@@ -83,7 +82,7 @@ serve((req) => {
                 message: '文字数が不足しているため、カードが使えません。',
                 errorCode: '10005'
               }));
-        } else {
+            } else {
               history.push(nextWord);
               broadcastMessage(data.username, nextWord);
               switchTurn(data.username);
@@ -91,6 +90,10 @@ serve((req) => {
           } else {
             socket.send(JSON.stringify({ type: 'error', message: 'まだあなたのターンではありません' }));
           }
+        } else if (data.type === 'reset') {
+          history = ["しりとり"];
+          broadcastMessage('System', 'リセットしましす');
+          checkAndStartChat();
         } else {
           console.error('Invalid message format:', data);
         }
@@ -99,7 +102,7 @@ serve((req) => {
       }
     };
     
-        if (cardId !== undefined) {
+    if (cardId !== undefined) {
       if (cardId === 0) {
         // 後方一致変更カード
         if (cardOption !== undefined) {
