@@ -22,7 +22,7 @@
         <button id="readyBtn">準備完了</button>
       </div>
       <div class="history">
-
+        <ul id="outputs"></ul>
       </div>
     </sub>
     <main>
@@ -31,7 +31,6 @@
       </div>
       <div id="status"></div>
       <div id="previousWord"></div>
-      <ul id="outputs"></ul>
       <!-- 相手情報 -->
       <div class="opponent">
         <!-- 現在の単語を表示する場所 -->
@@ -54,93 +53,14 @@
         <button id="btn">送信</button>
       </div>
       <div class="cardStage">
-        <div class="card"></div>
-        <div class="card"></div>
-        <div class="card"></div>
+        <img class="card" src="./img/1.jpg" id="reverse" data-id="0">
+        <img class="card" src="./img/2.jpg" id="reverse" data-id="1">
+        <img class="card" src="./img/3.jpg" id="reverse" data-id="2">
       </div>
       <div class="reset">
         <button id="resetButton">ゲームリセット</button>
       </div>
     </main>
-    
-
-    <!-- JavaScriptを実行 -->
-    <script>
-      window.onload = async (event) => {
-        // GET /shiritoriを実行
-        const response = await fetch("/shiritori", { method: "GET" });
-        // responseの中からレスポンスのテキストデータを取得
-        const previousWord = await response.text();
-        // id: previousWordのタグを取得
-        const paragraph = document.querySelector("#previousWord");
-        // 取得したタグの中身を書き換える
-        paragraph.innerHTML = `${previousWord}`;
-      };
-
-      // 送信ボタンの押下時に実行
-      document.querySelector("#nextWordSendButton").onclick = async (event) => {
-        // inputタグを取得
-        const nextWordInput = document.querySelector("#nextWordInput");
-        // inputの中身を取得
-        const nextWordInputText = nextWordInput.value;
-        // POST /shiritoriを実行
-        // 次の単語をresponseに格納
-        const response = await fetch("/shiritori", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nextWord: nextWordInputText }),
-        });
-
-        // status: 200以外が返ってきた場合にエラーを表示
-        if (response.status !== 200) {
-          const errorJson = await response.text();
-          const errorObj = JSON.parse(errorJson);
-          switch (errorObj["errorCode"]) {
-            case "10002":
-            case "10003":
-              // id: previousWordのタグを取得
-              const paragraph = document.querySelector("#previousWord");
-              // 取得したタグの中身を書き換える
-              paragraph.innerHTML = errorObj["errorMessage"];
-              // inputタグを消去する
-              nextWordInput.remove();
-              // 送信ボタンを消去する
-              event.srcElement.remove();
-            default:
-              alert(errorObj["errorMessage"]);
-          }
-          return;
-        }
-
-        const previousWord = await response.text();
-
-        // id: previousWordのタグを取得
-        const paragraph = document.querySelector("#previousWord");
-        // 取得したタグの中身を書き換える
-        paragraph.innerHTML = `${previousWord}`;
-        // inputタグの中身を消去する
-        nextWordInput.value = "";
-      };
-
-      // 送信ボタンの押下時に実行
-      document.querySelector("#resetSendButton").onclick = async (event) => {
-        // POST /resetを実行
-        const response = await fetch("/reset", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        // ページをリロードする
-        window.location.reload();
-      };
-
-      const input = document.getElementById('nextWordInput');
-
-      input.addEventListener('input', function() {
-        // フィールドに入力された文字数に応じて幅を変更
-        input.style.width = (this.value.length + 1) * 68 + 'px'; // 文字数に基づいて幅を計算
-      });
-
-    </script>
     <script src="index.js"></script>
   </body>
 </html>
