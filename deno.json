@@ -1,0 +1,26 @@
+{
+  "tasks": {
+    "start": "deno run --watch --allow-net --allow-read server.deno.js"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"]
+  },
+  "lint": {
+    "include": ["./**/*.js", "./*.js", "./**/*.ts", "./*.ts"],
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"],
+      "exclude": ["no-unused-vars"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "include": ["./**/*.js", "./*.js", "./**/*.ts", "./*.ts"]
+  }
+}
