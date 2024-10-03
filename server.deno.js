@@ -1,6 +1,10 @@
 import { serveDir } from "https://deno.land/std@0.223.0/http/file_server.ts";
 
 let history = ["しりとり"];
+// 後方一致の文字数
+let suffixMatch = 1;
+let minimumStringLength = 2;
+let isReverse = false;
 
 Deno.serve(async (request) => {
   // リクエスト
@@ -31,25 +35,17 @@ Deno.serve(async (request) => {
     // カードの効力
     const cardOption = Number(requestJson["cardOption"]);
 
-    // 後方一致の文字数
-    let suffixMatch = 1;
-    let minimumStringLength = 3;
+    console.log("p", previousWord.slice(0, suffixMatch));
+    console.log("n", nextWord.slice(-suffixMatch));
+    console.log("p", previousWord.slice(-suffixMatch));
+    console.log("n", nextWord.slice(0, suffixMatch));
 
-    if (cardId !== undefined) {
-      if (cardId === 0) {
-        // 後方一致変更カード
-        if (cardOption !== undefined) {
-          suffixMatch = cardOption;
-        }
-      } else if (cardId === 1) {
-        // 文字数下限変更カード
-        if (cardOption !== undefined) {
-          minimumStringLength = cardOption;
-        }
-      }
-    }
-
-    if (previousWord.slice(-suffixMatch) !== nextWord.slice(0, suffixMatch)) {
+    if (
+      (previousWord.slice(0, suffixMatch) !== nextWord.slice(-suffixMatch) &&
+        isReverse) ||
+      (previousWord.slice(-suffixMatch) !== nextWord.slice(0, suffixMatch) &&
+        !isReverse)
+    ) {
       // 前の単語につながっていない
       return new Response(
         JSON.stringify({
@@ -103,6 +99,24 @@ Deno.serve(async (request) => {
       console.log(previousWord.slice(-1));
 
       console.log(history);
+    }
+
+    // カード
+    if (cardId !== undefined) {
+      if (cardId === 0) {
+        // 後方一致変更カード
+        if (cardOption !== undefined) {
+          suffixMatch = cardOption;
+        }
+      } else if (cardId === 1) {
+        // 文字数下限変更カード
+        if (cardOption !== undefined) {
+          minimumStringLength = cardOption;
+        }
+      } else if (cardId === 2) {
+        // リバースカード
+        isReverse = !isReverse;
+      }
     }
 
     return new Response(previousWord);
