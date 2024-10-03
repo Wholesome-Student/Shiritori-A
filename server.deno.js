@@ -1,83 +1,137 @@
-import { serveDir } from "https://deno.land/std@0.223.0/http/file_server.ts";
+import { serve } from 'http/server.ts';
+import { serveDir } from 'http/file_server.ts';
 
-let history = ["しりとり"];
+let users = {};
+let sockets = [];
+let currentTurn = null; // 現在のターンを管理する変数
+let history = ["しりとり"]; // しりとりの履歴
 
-Deno.serve(async (request) => {
-  // リクエスト
-  const pathname = new URL(request.url).pathname;
-  console.log(`pathname: ${pathname}`);
+serve((req) => {
+  const pathname = new URL(req.url).pathname;
+  console.log(pathname);
 
-  // 過去最新の単語
-  let previousWord = history.slice(-1)[0];
-
-  if (request.method === "GET" && pathname === "/shiritori") {
+  if (req.method === "GET" && pathname === "/shiritori") {
     return new Response(previousWord);
   }
 
-  // リセット処理
-  if (request.method === "POST" && pathname === "/reset") {
-    history = ["しりとり"];
-    previousWord = "しりとり";
-    return new Response(previousWord);
+  if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
+    const { response, socket } = Deno.upgradeWebSocket(req);
+    
+    socket.onopen = () => {
+      sockets.push(socket);
+    };
+
+    socket.onmessage = async (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        console.log(`Received: ${JSON.stringify(data)}`);
+        
+        if (data.type === 'setUsername') {
+          if (users[data.username]) {
+            socket.send(JSON.stringify({ type: 'error', message: 'ユーザー名は既に使用されています' }));
+          } else {
+            users[data.username] = { socket, ready: false };
+            socket.send(JSON.stringify({ type: 'usernameSet', username: data.username }));
+          }
+        } else if (data.type === 'ready' && data.username) {
+          if (users[data.username]) {
+            users[data.username].ready = true;
+            checkAndStartChat();
+          } else {
+            console.error(`User ${data.username} not found`);
+          }
+        } else if (data.type === 'chat' && data.username) {
+          if (currentTurn === data.username) {
+            const nextWord = data.message;
+            const previousWord = history.slice(-1)[0];
+
+            if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '前の単語に続いていません',
+                errorCode: '10001'
+              }));
+            } else if (nextWord.slice(-1) === "ん") {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '「ん」で終わりました',
+                errorCode: '10002'
+              }));
+            } else if (history.includes(nextWord)) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: '過去に登場したことばです。',
+                errorCode: '10003'
+              }));
+            } else {
+              history.push(nextWord);
+              broadcastMessage(data.username, nextWord);
+              switchTurn(data.username);
+            }
+          } else {
+            socket.send(JSON.stringify({ type: 'error', message: 'まだあなたのターンではありません' }));
+          }
+        } else {
+          console.error('Invalid message format:', data);
+        }
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
+    };
+
+    socket.onclose = () => {
+      const username = Object.keys(users).find(key => users[key].socket === socket);
+      if (username) {
+        delete users[username];
+      }
+      sockets = sockets.filter(s => s !== socket);
+    };
+
+    return response;
   }
 
-  if (request.method === "POST" && pathname === "/shiritori") {
-    // リクエストのペイロードを取得
-    const requestJson = await request.json();
-    const nextWord = requestJson["nextWord"];
-
-    if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
-      // 前の単語につながっていない
-      return new Response(
-        JSON.stringify({
-          errorMessage: "前の単語に続いていません",
-          errorCode: "10001",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
-      );
-    } else if (nextWord.slice(-1) === "ん") {
-      // 「ん」で終わっている
-      return new Response(
-        JSON.stringify({
-          errorMessage: "「ん」で終わりました",
-          errorCode: "10002",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
-      );
-    } else if (history.includes(nextWord)) {
-      // 言葉が重複
-      return new Response(
-        JSON.stringify({
-          errorMessage: "過去に登場したことばです。",
-          errorCode: "10003",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json; charset=utf-8" },
-        }
-      );
-    } else {
-      // 正答
-      history.push(nextWord);
-      previousWord = history.slice(-1)[0];
-      console.log(previousWord.slice(-1));
-
-      console.log(history);
-    }
-
-    return new Response(previousWord);
-  }
-
-  // ./public以下のファイルを公開
-  return serveDir(request, {
-    fsRoot: "./public/",
-    urlRoot: "",
+  return serveDir(req, {
+    fsRoot: 'public',
+    urlRoot: '',
+    showDirListing: true,
     enableCors: true,
   });
 });
+
+function checkAndStartChat() {
+  const readyUsers = Object.values(users).filter(user => user.ready);
+  if (readyUsers.length === 2) {
+    broadcastMessage('System', 'チャットを開始します！');
+    currentTurn = Object.keys(users)[0]; // 最初のユーザーから開始
+    notifyTurn();
+  }
+}
+
+function broadcastMessage(sender, message) {
+  const messageObj = { type: 'chat', sender, message };
+  sockets.forEach((s) => {
+    try {
+      s.send(JSON.stringify(messageObj));
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  });
+}
+
+function switchTurn(currentUser) {
+  const usernames = Object.keys(users);
+  const nextUserIndex = (usernames.indexOf(currentUser) + 1) % usernames.length;
+  currentTurn = usernames[nextUserIndex];
+  notifyTurn();
+}
+
+function notifyTurn() {
+  const messageObj = { type: 'turn', username: currentTurn };
+  sockets.forEach((s) => {
+    try {
+      s.send(JSON.stringify(messageObj));
+    } catch (error) {
+      console.error('Failed to send turn notification:', error);
+    }
+  });
+}
