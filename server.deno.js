@@ -35,11 +35,6 @@ Deno.serve(async (request) => {
     // カードの効力
     const cardOption = Number(requestJson["cardOption"]);
 
-    console.log("p", previousWord.slice(0, suffixMatch));
-    console.log("n", nextWord.slice(-suffixMatch));
-    console.log("p", previousWord.slice(-suffixMatch));
-    console.log("n", nextWord.slice(0, suffixMatch));
-
     if (
       (previousWord.slice(0, suffixMatch) !== nextWord.slice(-suffixMatch) &&
         isReverse) ||
@@ -96,8 +91,6 @@ Deno.serve(async (request) => {
       // 正答
       history.push(nextWord);
       previousWord = history.slice(-1)[0];
-      console.log(previousWord.slice(-1));
-
       console.log(history);
     }
 
