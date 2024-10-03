@@ -9,13 +9,14 @@ let history = ["しりとり"]; // しりとりの履歴
 let suffixMatch = 1;
 let minimumStringLength = 2;
 let isReverse = false;
+let cardId = undefined;
 
 serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
   
     // リセット処理
-  if (request.method === "POST" && pathname === "/reset") {
+  if (req.method === "POST" && pathname === "/reset") {
     history = ["しりとり"];
     previousWord = "しりとり";
     return new Response(previousWord);
