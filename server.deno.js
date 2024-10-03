@@ -10,10 +10,6 @@ serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
 
-  if (req.method === "GET" && pathname === "/shiritori") {
-    return new Response(previousWord);
-  }
-
   if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
     const { response, socket } = Deno.upgradeWebSocket(req);
     
@@ -102,6 +98,7 @@ function checkAndStartChat() {
   const readyUsers = Object.values(users).filter(user => user.ready);
   if (readyUsers.length === 2) {
     broadcastMessage('System', 'チャットを開始します！');
+    broadcastMessage('System', 'しりとり');
     currentTurn = Object.keys(users)[0]; // 最初のユーザーから開始
     notifyTurn();
   }

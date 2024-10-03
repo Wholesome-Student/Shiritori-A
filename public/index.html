@@ -10,22 +10,10 @@
     <input type="text" id="usernameInput" placeholder="ユーザー名を入力">
     <button id="setUsernameBtn">ユーザー名を設定</button>
     <button id="readyBtn" disabled>準備完了</button>
-    <p id="previousWord"></p>
+    <div id="previousWord"></div>
     <ul id="outputs"></ul>
     <input type="text" id="input" disabled>
     <button id="btn" disabled>送信</button>
-    <script>
-      window.onload = async (event) => {
-        // GET /shiritoriを実行
-        const response = await fetch("/shiritori", { method: "GET" });
-        // responseの中からレスポンスのテキストデータを取得
-        const previousWord = await response.text();
-        // id: previousWordのタグを取得
-        const paragraph = document.querySelector("#previousWord");
-        // 取得したタグの中身を書き換える
-        paragraph.innerHTML = `前の単語: ${previousWord}`;
-      };
-    </script>
     <script src="index.js"></script>
 </body>
 </html>
