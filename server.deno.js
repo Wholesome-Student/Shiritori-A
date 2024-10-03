@@ -33,12 +33,18 @@ Deno.serve(async (request) => {
 
     // 後方一致の文字数
     let suffixMatch = 1;
+    let minimumStringLength = 3;
 
     if (cardId !== undefined) {
       if (cardId === 0) {
         // 後方一致変更カード
         if (cardOption !== undefined) {
           suffixMatch = cardOption;
+        }
+      } else if (cardId === 1) {
+        // 文字数下限変更カード
+        if (cardOption !== undefined) {
+          minimumStringLength = cardOption;
         }
       }
     }
@@ -73,6 +79,17 @@ Deno.serve(async (request) => {
         JSON.stringify({
           errorMessage: "過去に登場したことばです。",
           errorCode: "10003",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
+    } else if (nextWord.length < minimumStringLength) {
+      return new Response(
+        JSON.stringify({
+          errorMessage: "文字数が不足しています。",
+          errorCode: "10004",
         }),
         {
           status: 400,
