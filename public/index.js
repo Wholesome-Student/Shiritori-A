@@ -1,6 +1,6 @@
-const socket = new WebSocket(`wss://${location.host}/ws`);
+const socket = new WebSocket(`ws://${location.host}/ws`);
 let username = null;
-let selectedImageId = null;
+let selectedImageId = undefined;
 
 socket.addEventListener('error', (error) => {
   console.error(`websocket error:${error}`);
@@ -18,6 +18,7 @@ window.onload = () => {
     const resetBtn = document.getElementById("resetButton");
     const input2 = document.getElementById('input');
     const previousWordParagraph = document.getElementById('previousWord');
+    const ruleParagraph = document.getElementById('rule');
 
     input2.addEventListener('input', function() {
       // フィールドに入力された文字数に応じて幅を変更
@@ -61,7 +62,7 @@ window.onload = () => {
             type: 'chat',
             username,
             message: input.value,
-            cardId: '1',
+            cardId: selectedImageId,
             cardOption: '2',
           }),
         );
@@ -92,10 +93,14 @@ window.onload = () => {
       } else if (data.type === 'error') {
         statusDiv.textContent = data.message;
       } else if (data.type === 'chat') {
-        const li = document.createElement('li');
-        li.textContent = `${data.sender}: ${data.message}`;
-        previousWordParagraph.textContent = data.message;
-        outputs.appendChild(li);
+        if ( data.sender === "Mission" ) {
+          ruleParagraph.textContent = data.message;
+        } else {
+          const li = document.createElement('li');
+          li.textContent = `${data.sender}: ${data.message}`;
+          previousWordParagraph.textContent = data.message;
+          outputs.appendChild(li);
+        }
         if (
           data.sender === 'System' && data.message === 'チャットを開始します！'
         ) {
@@ -130,7 +135,7 @@ document.querySelectorAll(".card").forEach((img) => {
           }
       });
       if (!clickedImg.classList.contains("highlighted")) {
-          selectedImageId = null;
+          selectedImageId = undefined;
       }
       };
 });
