@@ -1,6 +1,10 @@
 import { serveDir } from "https://deno.land/std@0.223.0/http/file_server.ts";
 
 let history = ["しりとり"];
+// 後方一致の文字数
+let suffixMatch = 1;
+let minimumStringLength = 2;
+let isReverse = false;
 
 Deno.serve(async (request) => {
   // リクエスト
@@ -24,9 +28,19 @@ Deno.serve(async (request) => {
   if (request.method === "POST" && pathname === "/shiritori") {
     // リクエストのペイロードを取得
     const requestJson = await request.json();
+    // 送信された単語
     const nextWord = requestJson["nextWord"];
+    // カードの種類
+    const cardId = Number(requestJson["cardId"]);
+    // カードの効力
+    const cardOption = Number(requestJson["cardOption"]);
 
-    if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
+    if (
+      (previousWord.slice(0, suffixMatch) !== nextWord.slice(-suffixMatch) &&
+        isReverse) ||
+      (previousWord.slice(-suffixMatch) !== nextWord.slice(0, suffixMatch) &&
+        !isReverse)
+    ) {
       // 前の単語につながっていない
       return new Response(
         JSON.stringify({
@@ -62,13 +76,51 @@ Deno.serve(async (request) => {
           headers: { "Content-Type": "application/json; charset=utf-8" },
         }
       );
+    } else if (nextWord.length < minimumStringLength) {
+      return new Response(
+        JSON.stringify({
+          errorMessage: "文字数が不足しています。",
+          errorCode: "10004",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
+    } else if (cardId === 0 && cardOption > nextWord.length) {
+      return new Response(
+        JSON.stringify({
+          errorMessage: "文字数が不足しているため、カードが使えません。",
+          errorCode: "10005",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
     } else {
       // 正答
       history.push(nextWord);
       previousWord = history.slice(-1)[0];
-      console.log(previousWord.slice(-1));
-
       console.log(history);
+    }
+
+    // カード
+    if (cardId !== undefined) {
+      if (cardId === 0) {
+        // 後方一致変更カード
+        if (cardOption !== undefined) {
+          suffixMatch = cardOption;
+        }
+      } else if (cardId === 1) {
+        // 文字数下限変更カード
+        if (cardOption !== undefined) {
+          minimumStringLength = cardOption;
+        }
+      } else if (cardId === 2) {
+        // リバースカード
+        isReverse = !isReverse;
+      }
     }
 
     return new Response(previousWord);
