@@ -1,28 +1,33 @@
 import { serveDir } from "https://deno.land/std@0.223.0/http/file_server.ts";
 
-let previousWord = "しりとり";
+let history = ["しりとり"];
 
 Deno.serve(async (request) => {
-  // パス名を取得する
-  // http://localhost:8000/hoge に接続した場合"/hoge"が取得できる
+  // リクエスト
   const pathname = new URL(request.url).pathname;
   console.log(`pathname: ${pathname}`);
 
+  // 過去最新の単語
+  let previousWord = history.slice(-1)[0];
+
   if (request.method === "GET" && pathname === "/shiritori") {
+    return new Response(previousWord);
+  }
+
+  // リセット処理
+  if (request.method === "POST" && pathname === "/reset") {
+    history = ["しりとり"];
+    previousWord = "しりとり";
     return new Response(previousWord);
   }
 
   if (request.method === "POST" && pathname === "/shiritori") {
     // リクエストのペイロードを取得
     const requestJson = await request.json();
-    // JSONの中からnextWordを取得
     const nextWord = requestJson["nextWord"];
 
-    // previousWordの末尾とnextWordの先頭が同一か確認
-    if (previousWord.slice(-1) === nextWord.slice(0, 1)) {
-      // 同一であれば、previousWordを更新
-      previousWord = nextWord;
-    } else {
+    if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
+      // 前の単語につながっていない
       return new Response(
         JSON.stringify({
           errorMessage: "前の単語に続いていません",
@@ -33,19 +38,44 @@ Deno.serve(async (request) => {
           headers: { "Content-Type": "application/json; charset=utf-8" },
         }
       );
+    } else if (nextWord.slice(-1) === "ん") {
+      // 「ん」で終わっている
+      return new Response(
+        JSON.stringify({
+          errorMessage: "「ん」で終わりました",
+          errorCode: "10002",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
+    } else if (history.includes(nextWord)) {
+      // 言葉が重複
+      return new Response(
+        JSON.stringify({
+          errorMessage: "過去に登場したことばです。",
+          errorCode: "10003",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        }
+      );
+    } else {
+      // 正答
+      history.push(nextWord);
+      previousWord = history.slice(-1)[0];
+      console.log(previousWord.slice(-1));
+
+      console.log(history);
     }
 
-    // 現在の単語を返す
     return new Response(previousWord);
   }
 
   // ./public以下のファイルを公開
   return serveDir(request, {
-    /*
-             - fsRoot: 公開するフォルダを指定
-             - urlRoot: フォルダを展開するURLを指定。今回はlocalhost:8000/に直に展開する
-             - enableCors: CORSの設定を付加するか
-             */
     fsRoot: "./public/",
     urlRoot: "",
     enableCors: true,
