@@ -4,7 +4,7 @@ import { serveDir } from 'http/file_server.ts';
 let users = {};
 let sockets = [];
 let currentTurn = null; // 現在のターンを管理する変数
-let history = ["しりとり"]; // しりとりの履歴
+let history = ['しりとり']; // しりとりの履歴
 let suffixMatch = 1;
 let minimumStringLength = 2;
 let isReverse = false;
@@ -13,17 +13,17 @@ let cardId = undefined;
 serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
-  
+
   // リセット処理
-  if (req.method === "POST" && pathname === "/reset") {
-    history = ["しりとり"];
-    previousWord = "しりとり";
+  if (req.method === 'POST' && pathname === '/reset') {
+    history = ['しりとり'];
+    previousWord = 'しりとり';
     return new Response(previousWord);
   }
 
-  if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
+  if (pathname === '/ws' && req.headers.get('upgrade') === 'websocket') {
     const { response, socket } = Deno.upgradeWebSocket(req);
-    
+
     socket.onopen = () => {
       sockets.push(socket);
     };
@@ -32,13 +32,20 @@ serve((req) => {
       try {
         const data = JSON.parse(e.data);
         console.log(`Received: ${JSON.stringify(data)}`);
-        
+
         if (data.type === 'setUsername') {
           if (users[data.username]) {
-            socket.send(JSON.stringify({ type: 'error', message: 'ユーザー名は既に使用されています' }));
+            socket.send(
+              JSON.stringify({
+                type: 'error',
+                message: 'ユーザー名は既に使用されています',
+              }),
+            );
           } else {
             users[data.username] = { socket, ready: false };
-            socket.send(JSON.stringify({ type: 'usernameSet', username: data.username }));
+            socket.send(
+              JSON.stringify({ type: 'usernameSet', username: data.username }),
+            );
           }
         } else if (data.type === 'ready' && data.username) {
           if (users[data.username]) {
@@ -51,47 +58,80 @@ serve((req) => {
           if (currentTurn === data.username) {
             const nextWord = data.message;
             const previousWord = history.slice(-1)[0];
+            // カードの種類
+            const cardId = Number(data.cardId);
+            // カードの効力
+            const cardOption = Number(data.cardOption);
 
-            if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
+            if (
+              (previousWord.slice(0, suffixMatch) !==
+                  nextWord.slice(-suffixMatch) &&
+                isReverse) ||
+              (previousWord.slice(-suffixMatch) !==
+                  nextWord.slice(0, suffixMatch) &&
+                !isReverse)
+            ) {
               socket.send(JSON.stringify({
                 type: 'error',
                 message: '前の単語に続いていません',
-                errorCode: '10001'
+                errorCode: '10001',
               }));
-            } else if (nextWord.slice(-1) === "ん") {
+            } else if (nextWord.slice(-1) === 'ん') {
               socket.send(JSON.stringify({
                 type: 'error',
                 message: '「ん」で終わりました',
-                errorCode: '10002'
+                errorCode: '10002',
               }));
             } else if (history.includes(nextWord)) {
               socket.send(JSON.stringify({
                 type: 'error',
                 message: '過去に登場したことばです。',
-                errorCode: '10003'
+                errorCode: '10003',
               }));
             } else if (nextWord.length < minimumStringLength) {
               socket.send(JSON.stringify({
                 type: 'error',
                 message: '文字数が不足しています',
-                errorCode: '10004'
+                errorCode: '10004',
               }));
             } else if (cardId === 0 && cardOption > nextWord.length) {
-                socket.send(JSON.stringify({
+              socket.send(JSON.stringify({
                 type: 'error',
                 message: '文字数が不足しているため、カードが使えません。',
-                errorCode: '10005'
+                errorCode: '10005',
               }));
             } else {
               history.push(nextWord);
               broadcastMessage(data.username, nextWord);
               switchTurn(data.username);
             }
+
+            if (cardId !== undefined) {
+              if (cardId === 0) {
+                // 後方一致変更カード
+                if (cardOption !== undefined) {
+                  suffixMatch = cardOption;
+                }
+              } else if (cardId === 1) {
+                // 文字数下限変更カード
+                if (cardOption !== undefined) {
+                  minimumStringLength = cardOption;
+                }
+              } else if (cardId === 2) {
+                // リバースカード
+                isReverse = !isReverse;
+              }
+            }
           } else {
-            socket.send(JSON.stringify({ type: 'error', message: 'まだあなたのターンではありません' }));
+            socket.send(
+              JSON.stringify({
+                type: 'error',
+                message: 'まだあなたのターンではありません',
+              }),
+            );
           }
         } else if (data.type === 'reset') {
-          history = ["しりとり"];
+          history = ['しりとり'];
           broadcastMessage('System', 'リセットしましす');
           checkAndStartChat();
         } else {
@@ -101,30 +141,15 @@ serve((req) => {
         console.error('Error processing message:', error);
       }
     };
-    
-    if (cardId !== undefined) {
-      if (cardId === 0) {
-        // 後方一致変更カード
-        if (cardOption !== undefined) {
-          suffixMatch = cardOption;
-        }
-      } else if (cardId === 1) {
-        // 文字数下限変更カード
-        if (cardOption !== undefined) {
-          minimumStringLength = cardOption;
-        }
-      } else if (cardId === 2) {
-        // リバースカード
-        isReverse = !isReverse;
-      }
-    }
 
     socket.onclose = () => {
-      const username = Object.keys(users).find(key => users[key].socket === socket);
+      const username = Object.keys(users).find((key) =>
+        users[key].socket === socket
+      );
       if (username) {
         delete users[username];
       }
-      sockets = sockets.filter(s => s !== socket);
+      sockets = sockets.filter((s) => s !== socket);
     };
 
     return response;
@@ -139,7 +164,7 @@ serve((req) => {
 });
 
 function checkAndStartChat() {
-  const readyUsers = Object.values(users).filter(user => user.ready);
+  const readyUsers = Object.values(users).filter((user) => user.ready);
   if (readyUsers.length === 2) {
     broadcastMessage('System', 'チャットを開始します！');
     broadcastMessage('System', 'しりとり');
