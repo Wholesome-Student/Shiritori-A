@@ -24,9 +24,26 @@ Deno.serve(async (request) => {
   if (request.method === "POST" && pathname === "/shiritori") {
     // リクエストのペイロードを取得
     const requestJson = await request.json();
+    // 送信された単語
     const nextWord = requestJson["nextWord"];
+    // カードの種類
+    const cardId = Number(requestJson["cardId"]);
+    // カードの効力
+    const cardOption = Number(requestJson["cardOption"]);
 
-    if (previousWord.slice(-1) !== nextWord.slice(0, 1)) {
+    // 後方一致の文字数
+    let suffixMatch = 1;
+
+    if (cardId !== undefined) {
+      if (cardId === 0) {
+        // 後方一致変更カード
+        if (cardOption !== undefined) {
+          suffixMatch = cardOption;
+        }
+      }
+    }
+
+    if (previousWord.slice(-suffixMatch) !== nextWord.slice(0, suffixMatch)) {
       // 前の単語につながっていない
       return new Response(
         JSON.stringify({
