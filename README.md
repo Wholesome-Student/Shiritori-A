@@ -1,24 +1,31 @@
-# template-deno-dev
+# SiLick Chain
 
-[Deno](https://deno.land/)を使った開発のテンプレートです。  
-[Deno Deploy](https://deno.com/deploy)を利用して外部へ公開することを想定しています。  
+by チーム ALL_OS
 
-## Deno Deploy の利用方法
+スピード感を重視したしりとりゲーム。
+「持ち時間」制で、ミッションをクリアして「妨害カード」を駆使しながら相手と戦おう！
 
-↓以上の詳細は公式リファレンスへ。
+## 要件
 
-1. [Deno Deploy](https://deno.com/deploy)にアクセスして、右上の「Sign In」からGitHubアカウントでのOAuthログインでアカウントを作成orログインしてください。
-2. 青い「+ New Project」から「Create a project」画面に遷移して、「Deploy an existing GitHub repository」側から GitHub repository の「Select a repository」をクリック
-3. Create a project from GitHub の画面で、デプロイするリポジトリを選んでこのリポジトリをテンプレートにした場合は「No build step」で、メインのDenoのコードが書いてあるファイルをエントリポイントに指定して「Create & Deploy」します。
-4. ダイアログが出て Deployed になれば成功。右上の青い「View」からデプロイされたページが確認できるはずです。
+### 最小要件
 
-## コミットテンプレートとemoji prefixについて
+- [x] 直前の単語を、表示できるようにする
+- [x] 任意の単語を、入力できるようにする
+- [x] 直前の単語の末尾と、入力した単語の先頭を比較して、同じ場合だけ単語を更新する。違う場合は、エラーを表示する
+- [x] 末尾が「ん」で終わる単語が入力されたら、ゲームを終了する
+- [x] 過去に使用した単語が入力されたら、ゲームを終了する
+- [x] ゲーム中や終了後に、最初からやり直せるリセット機能をつける
 
-コミットテンプレートは以下のようにして使用できます。  
+### 追加要件
 
-```shell
-cd <リポジトリ直下>
-git config commit.template ./.commit_template
-```
+- 2 人対戦に対応
+- 持ち時間あり(30s)
+- スキルカード
+- ミッションをクリアするとゲット？
+  - 指定した文字数
+  - 指定した文字を含む
+  - 回復ミッションもあります
 
-emoji prefix にはコミット履歴が可愛くなる他にもメリットがありますが、コミット履歴が可愛くなるのが好きで使ってます。
+## 環境
+
+PC のプレイを想定。
