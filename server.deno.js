@@ -256,6 +256,11 @@ serve((req) => {
             );
           }
         } else if (data.type === "reset") {
+          suffixMatch = 1;
+          minimumStringLength = 2;
+          isReverse = false;
+          missionId = 0;
+          missionOption = "4";
           history = ["しりとり"]; // しりとりの履歴
 
           broadcastMessage("System", "リセットします");
