@@ -70,13 +70,6 @@ serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
 
-  // リセット処理
-  if (req.method === "POST" && pathname === "/reset") {
-    history = ["しりとり"];
-    previousWord = "しりとり";
-    return new Response(previousWord);
-  }
-
   if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
     const { response, socket } = Deno.upgradeWebSocket(req);
 
@@ -263,7 +256,8 @@ serve((req) => {
             );
           }
         } else if (data.type === "reset") {
-          history = ["しりとり"];
+          history = ["しりとり"]; // しりとりの履歴
+
           broadcastMessage("System", "リセットします");
           checkAndStartChat();
         } else {
