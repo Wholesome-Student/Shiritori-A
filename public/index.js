@@ -104,6 +104,9 @@ window.onload = () => {
       } else if (data.type === "chat") {
         if (data.sender === "Mission") {
           ruleParagraph.textContent = data.message;
+        } else if (data.sender === "Gameover") {
+          const winner = data.message;
+          window.location.href = "gameover.html?winner=" + String(winner);
         } else {
           const li = document.createElement("li");
           li.textContent = `${data.sender}: ${data.message}`;

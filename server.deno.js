@@ -110,6 +110,12 @@ serve((req) => {
           } else {
             console.error(`User ${data.username} not found`);
           }
+        } else if (data.tyoe === "end" && data.username) {
+          const usernames = Object.keys(users);
+          const nextUserIndex =
+            (usernames.indexOf(data.username) + 1) % usernames.length;
+          currentTurn = usernames[nextUserIndex];
+          broadcastMessage("Gameover", currentTurn);
         } else if (data.type === "chat" && data.username) {
           if (currentTurn === data.username) {
             const nextWord = data.message;
@@ -135,21 +141,17 @@ serve((req) => {
                 })
               );
             } else if (nextWord.slice(-suffixMatch) === "ん") {
-              socket.send(
-                JSON.stringify({
-                  type: "error",
-                  message: "「ん」で終わりました",
-                  errorCode: "10002",
-                })
-              );
+              const usernames = Object.keys(users);
+              const nextUserIndex =
+                (usernames.indexOf(data.username) + 1) % usernames.length;
+              currentTurn = usernames[nextUserIndex];
+              broadcastMessage("Gameover", currentTurn);
             } else if (history.includes(nextWord)) {
-              socket.send(
-                JSON.stringify({
-                  type: "error",
-                  message: "過去に登場したことばです。",
-                  errorCode: "10003",
-                })
-              );
+              const usernames = Object.keys(users);
+              const nextUserIndex =
+                (usernames.indexOf(data.username) + 1) % usernames.length;
+              currentTurn = usernames[nextUserIndex];
+              broadcastMessage("Gameover", currentTurn);
             } else if (nextWord.length < minimumStringLength) {
               socket.send(
                 JSON.stringify({
