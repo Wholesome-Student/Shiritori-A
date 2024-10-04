@@ -134,7 +134,7 @@ serve((req) => {
                   errorCode: "10001",
                 })
               );
-            } else if (nextWord.slice(-1) === "ん") {
+            } else if (nextWord.slice(-suffixMatch) === "ん") {
               socket.send(
                 JSON.stringify({
                   type: "error",
@@ -219,18 +219,22 @@ serve((req) => {
 
             missionId = Math.floor(Math.random() * 3);
             if (missionId !== 2) {
-              missionOption = String(Math.floor(Math.random() * 3));
+              missionOption = String(4 + Math.floor(Math.random() * 3));
             } else {
               missionOption = getRandomKana();
             }
 
-            broadcastMessage(
-              "Mission",
-              "missionId:" +
-                String(missionId) +
-                " missionOption:" +
-                String(missionOption)
-            );
+            let missionStr = "ミッション：";
+
+            if (missionId === 0) {
+              missionStr += missionOption + "文字以上の言葉";
+            } else if (missionId === 1) {
+              missionStr += missionOption + "文字ちょうどの言葉";
+            } else if (missionId === 2) {
+              missionStr += "「" + missionOption + "」" + "を含む文字";
+            }
+
+            broadcastMessage("Mission", missionStr);
 
             if (cardId !== undefined) {
               if (cardId === 0) {
