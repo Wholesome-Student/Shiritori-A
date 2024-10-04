@@ -219,7 +219,7 @@ serve((req) => {
 
             missionId = Math.floor(Math.random() * 3);
             if (missionId !== 2) {
-              missionOption = String(Math.floor(Math.random() * 3));
+              missionOption = String(4 + Math.floor(Math.random() * 3));
             } else {
               missionOption = getRandomKana();
             }
