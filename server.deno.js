@@ -147,13 +147,11 @@ serve((req) => {
               currentTurn = usernames[nextUserIndex];
               broadcastMessage("Gameover", currentTurn);
             } else if (history.includes(nextWord)) {
-              socket.send(
-                JSON.stringify({
-                  type: "error",
-                  message: "過去に登場したことばです。",
-                  errorCode: "10003",
-                })
-              );
+              const usernames = Object.keys(users);
+              const nextUserIndex =
+                (usernames.indexOf(data.username) + 1) % usernames.length;
+              currentTurn = usernames[nextUserIndex];
+              broadcastMessage("Gameover", currentTurn);
             } else if (nextWord.length < minimumStringLength) {
               socket.send(
                 JSON.stringify({
