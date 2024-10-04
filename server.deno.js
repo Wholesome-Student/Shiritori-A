@@ -1,27 +1,83 @@
-import { serve } from 'http/server.ts';
-import { serveDir } from 'http/file_server.ts';
+import { serve } from "http/server.ts";
+import { serveDir } from "http/file_server.ts";
+import { randomInteger } from "https://deno.land/std@0.194.0/collections/_utils.ts";
 
 let users = {};
 let sockets = [];
 let currentTurn = null; // 現在のターンを管理する変数
-let history = ['しりとり']; // しりとりの履歴
+let history = ["しりとり"]; // しりとりの履歴
 let suffixMatch = 1;
 let minimumStringLength = 2;
 let isReverse = false;
-let cardId = undefined;
+let missionId = 0;
+let missionOption = "4";
+
+function getRandomKana() {
+  const kanaList = [
+    "あ",
+    "い",
+    "う",
+    "え",
+    "お",
+    "か",
+    "き",
+    "く",
+    "け",
+    "こ",
+    "さ",
+    "し",
+    "す",
+    "せ",
+    "そ",
+    "た",
+    "ち",
+    "つ",
+    "て",
+    "と",
+    "な",
+    "に",
+    "ぬ",
+    "ね",
+    "の",
+    "は",
+    "ひ",
+    "ふ",
+    "へ",
+    "ほ",
+    "ま",
+    "み",
+    "む",
+    "め",
+    "も",
+    "や",
+    "ゆ",
+    "よ",
+    "ら",
+    "り",
+    "る",
+    "れ",
+    "ろ",
+    "わ",
+    "を",
+    "ん",
+  ];
+
+  const randomIndex = Math.floor(Math.random() * kanaList.length);
+  return kanaList[randomIndex];
+}
 
 serve((req) => {
   const pathname = new URL(req.url).pathname;
   console.log(pathname);
 
   // リセット処理
-  if (req.method === 'POST' && pathname === '/reset') {
-    history = ['しりとり'];
-    previousWord = 'しりとり';
+  if (req.method === "POST" && pathname === "/reset") {
+    history = ["しりとり"];
+    previousWord = "しりとり";
     return new Response(previousWord);
   }
 
-  if (pathname === '/ws' && req.headers.get('upgrade') === 'websocket') {
+  if (pathname === "/ws" && req.headers.get("upgrade") === "websocket") {
     const { response, socket } = Deno.upgradeWebSocket(req);
 
     socket.onopen = () => {
@@ -33,28 +89,28 @@ serve((req) => {
         const data = JSON.parse(e.data);
         console.log(`Received: ${JSON.stringify(data)}`);
 
-        if (data.type === 'setUsername') {
+        if (data.type === "setUsername") {
           if (users[data.username]) {
             socket.send(
               JSON.stringify({
-                type: 'error',
-                message: 'ユーザー名は既に使用されています',
-              }),
+                type: "error",
+                message: "ユーザー名は既に使用されています",
+              })
             );
           } else {
             users[data.username] = { socket, ready: false };
             socket.send(
-              JSON.stringify({ type: 'usernameSet', username: data.username }),
+              JSON.stringify({ type: "usernameSet", username: data.username })
             );
           }
-        } else if (data.type === 'ready' && data.username) {
+        } else if (data.type === "ready" && data.username) {
           if (users[data.username]) {
             users[data.username].ready = true;
             checkAndStartChat();
           } else {
             console.error(`User ${data.username} not found`);
           }
-        } else if (data.type === 'chat' && data.username) {
+        } else if (data.type === "chat" && data.username) {
           if (currentTurn === data.username) {
             const nextWord = data.message;
             const previousWord = history.slice(-1)[0];
@@ -65,46 +121,120 @@ serve((req) => {
 
             if (
               (previousWord.slice(0, suffixMatch) !==
-                  nextWord.slice(-suffixMatch) &&
+                nextWord.slice(-suffixMatch) &&
                 isReverse) ||
               (previousWord.slice(-suffixMatch) !==
-                  nextWord.slice(0, suffixMatch) &&
+                nextWord.slice(0, suffixMatch) &&
                 !isReverse)
             ) {
-              socket.send(JSON.stringify({
-                type: 'error',
-                message: '前の単語に続いていません',
-                errorCode: '10001',
-              }));
-            } else if (nextWord.slice(-1) === 'ん') {
-              socket.send(JSON.stringify({
-                type: 'error',
-                message: '「ん」で終わりました',
-                errorCode: '10002',
-              }));
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  message: "前の単語に続いていません",
+                  errorCode: "10001",
+                })
+              );
+            } else if (nextWord.slice(-suffixMatch) === "ん") {
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  message: "「ん」で終わりました",
+                  errorCode: "10002",
+                })
+              );
             } else if (history.includes(nextWord)) {
-              socket.send(JSON.stringify({
-                type: 'error',
-                message: '過去に登場したことばです。',
-                errorCode: '10003',
-              }));
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  message: "過去に登場したことばです。",
+                  errorCode: "10003",
+                })
+              );
             } else if (nextWord.length < minimumStringLength) {
-              socket.send(JSON.stringify({
-                type: 'error',
-                message: '文字数が不足しています',
-                errorCode: '10004',
-              }));
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  message: "文字数が不足しています",
+                  errorCode: "10004",
+                })
+              );
             } else if (cardId === 0 && cardOption > nextWord.length) {
-              socket.send(JSON.stringify({
-                type: 'error',
-                message: '文字数が不足しているため、カードが使えません。',
-                errorCode: '10005',
-              }));
+              socket.send(
+                JSON.stringify({
+                  type: "error",
+                  message: "文字数が不足しているため、カードが使えません。",
+                  errorCode: "10005",
+                })
+              );
             } else {
               history.push(nextWord);
               broadcastMessage(data.username, nextWord);
               switchTurn(data.username);
+
+              if (missionId === 0) {
+                // n文字以上
+                if (nextWord > Number(missionOption)) {
+                  socket.send(
+                    JSON.stringify({
+                      type: "success",
+                      cardId: "1",
+                      cardOption: "4",
+                    })
+                  );
+                }
+              } else if (missionId === 1) {
+                // n文字ちょうど
+                if (nextWord === Number(missionOption)) {
+                  socket.send(
+                    JSON.stringify({
+                      type: "success",
+                      cardId: "1",
+                      cardOption: "4",
+                    })
+                  );
+                }
+              } else if (missionId === 2) {
+                // 文字を含む
+                if (nextWord.includes(missionOption)) {
+                  socket.send(
+                    JSON.stringify({
+                      type: "success",
+                      cardId: "1",
+                      cardOption: "4",
+                    })
+                  );
+                }
+              } else {
+                if (nextWord.includes(missionOption)) {
+                  socket.send(
+                    JSON.stringify({
+                      type: "success",
+                      cardId: undefined,
+                      cardOption: undefined,
+                    })
+                  );
+                }
+              }
             }
+
+            missionId = Math.floor(Math.random() * 3);
+            if (missionId !== 2) {
+              missionOption = String(4 + Math.floor(Math.random() * 3));
+            } else {
+              missionOption = getRandomKana();
+            }
+
+            let missionStr = "ミッション：";
+
+            if (missionId === 0) {
+              missionStr += missionOption + "文字以上の言葉";
+            } else if (missionId === 1) {
+              missionStr += missionOption + "文字ちょうどの言葉";
+            } else if (missionId === 2) {
+              missionStr += "「" + missionOption + "」" + "を含む文字";
+            }
+
+            broadcastMessage("Mission", missionStr);
 
             if (cardId !== undefined) {
               if (cardId === 0) {
@@ -125,26 +255,26 @@ serve((req) => {
           } else {
             socket.send(
               JSON.stringify({
-                type: 'error',
-                message: 'まだあなたのターンではありません',
-              }),
+                type: "error",
+                message: "まだあなたのターンではありません",
+              })
             );
           }
-        } else if (data.type === 'reset') {
-          history = ['しりとり'];
-          broadcastMessage('System', 'リセットしましす');
+        } else if (data.type === "reset") {
+          history = ["しりとり"];
+          broadcastMessage("System", "リセットしましす");
           checkAndStartChat();
         } else {
-          console.error('Invalid message format:', data);
+          console.error("Invalid message format:", data);
         }
       } catch (error) {
-        console.error('Error processing message:', error);
+        console.error("Error processing message:", error);
       }
     };
 
     socket.onclose = () => {
-      const username = Object.keys(users).find((key) =>
-        users[key].socket === socket
+      const username = Object.keys(users).find(
+        (key) => users[key].socket === socket
       );
       if (username) {
         delete users[username];
@@ -156,8 +286,8 @@ serve((req) => {
   }
 
   return serveDir(req, {
-    fsRoot: 'public',
-    urlRoot: '',
+    fsRoot: "public",
+    urlRoot: "",
     showDirListing: true,
     enableCors: true,
   });
@@ -166,20 +296,20 @@ serve((req) => {
 function checkAndStartChat() {
   const readyUsers = Object.values(users).filter((user) => user.ready);
   if (readyUsers.length === 2) {
-    broadcastMessage('System', 'チャットを開始します！');
-    broadcastMessage('System', 'しりとり');
+    broadcastMessage("System", "チャットを開始します！");
+    broadcastMessage("System", "しりとり");
     currentTurn = Object.keys(users)[0]; // 最初のユーザーから開始
     notifyTurn();
   }
 }
 
 function broadcastMessage(sender, message) {
-  const messageObj = { type: 'chat', sender, message };
+  const messageObj = { type: "chat", sender, message };
   sockets.forEach((s) => {
     try {
       s.send(JSON.stringify(messageObj));
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
     }
   });
 }
@@ -192,12 +322,12 @@ function switchTurn(currentUser) {
 }
 
 function notifyTurn() {
-  const messageObj = { type: 'turn', username: currentTurn };
+  const messageObj = { type: "turn", username: currentTurn };
   sockets.forEach((s) => {
     try {
       s.send(JSON.stringify(messageObj));
     } catch (error) {
-      console.error('Failed to send turn notification:', error);
+      console.error("Failed to send turn notification:", error);
     }
   });
 }
