@@ -107,6 +107,8 @@ window.onload = () => {
           btn.disabled = false;
           input.disabled = false;
         }
+      } else if (data.type === "turn") {
+        statusDiv.textContent = `${data.username}の番です`;
       }
     });
 
