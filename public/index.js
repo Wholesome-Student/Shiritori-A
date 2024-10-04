@@ -1,10 +1,9 @@
-const socket = new WebSocket(`wss://${location.host}/ws`);
+const socket = new WebSocket(`ws://${location.host}/ws`);
 let username = null;
 
 let selectedImageId = undefined;
 let intervalId = null;
-let count = 30;  // カウントの開始値
-
+let count = 30; // カウントの開始値
 
 socket.addEventListener("error", (error) => {
   console.error(`websocket error:${error}`);
@@ -23,9 +22,9 @@ window.onload = () => {
     const input2 = document.getElementById("input");
     const previousWordParagraph = document.getElementById("previousWord");
     const ruleParagraph = document.getElementById("rule");
-    const countdownElement = document.getElementById('time');  // カウントを表示する要素を取得
+    const countdownElement = document.getElementById("time"); // カウントを表示する要素を取得
 
-    input2.addEventListener('input', function() {
+    input2.addEventListener("input", function () {
       // フィールドに入力された文字数に応じて幅を変更
       input2.style.width = (this.value.length + 1) * 68 + "px"; // 文字数に基づいて幅を計算
     });
@@ -119,24 +118,23 @@ window.onload = () => {
         ) {
           btn.disabled = false;
           input.disabled = false;
-        } if (
-          data.sender === "System" &&
-          data.message === "リセットします"
-        ) {
+        }
+        if (data.sender === "System" && data.message === "リセットします") {
           location.reload();
         }
       } else if (data.type === "turn") {
         statusDiv.textContent = `${data.username}の番です`;
         if (data.username === username) {
           if (!intervalId) {
-            intervalId = setInterval(function() {
-              countdownElement.textContent = count;  // HTML要素に現在のカウントを表示
-                count--;  // カウントを1減らす
-    
-              if (count < 0) {  // カウントが0になったら
-                  clearInterval(intervalId);  // タイマーを停止
-                  countdownElement.textContent = 'タイマー終了';  // 終了メッセージを表示
-                  socket.send(JSON.stringify({ type: "end", username }));
+            intervalId = setInterval(function () {
+              countdownElement.textContent = count; // HTML要素に現在のカウントを表示
+              count--; // カウントを1減らす
+
+              if (count < 0) {
+                // カウントが0になったら
+                clearInterval(intervalId); // タイマーを停止
+                countdownElement.textContent = "タイマー終了"; // 終了メッセージを表示
+                socket.send(JSON.stringify({ type: "end", username }));
               }
             }, 1000);
           }

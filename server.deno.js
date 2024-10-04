@@ -256,15 +256,8 @@ serve((req) => {
             );
           }
         } else if (data.type === "reset") {
-          users = {};
-          sockets = [];
-          currentTurn = null; // 現在のターンを管理する変数
           history = ["しりとり"]; // しりとりの履歴
-          suffixMatch = 1;
-          minimumStringLength = 2;
-          isReverse = false;
-          missionId = 0;
-          missionOption = "4";
+
           broadcastMessage("System", "リセットします");
           checkAndStartChat();
         } else {
