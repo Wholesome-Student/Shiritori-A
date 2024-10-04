@@ -135,13 +135,11 @@ serve((req) => {
                 })
               );
             } else if (nextWord.slice(-suffixMatch) === "ん") {
-              socket.send(
-                JSON.stringify({
-                  type: "error",
-                  message: "「ん」で終わりました",
-                  errorCode: "10002",
-                })
-              );
+              const usernames = Object.keys(users);
+              const nextUserIndex =
+                (usernames.indexOf(data.username) + 1) % usernames.length;
+              currentTurn = usernames[nextUserIndex];
+              broadcastMessage("Gameover", currentTurn);
             } else if (history.includes(nextWord)) {
               socket.send(
                 JSON.stringify({
