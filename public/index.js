@@ -125,6 +125,8 @@ window.onload = () => {
             }
           }, 1000);
         }
+      } else if (data.type === "turn") {
+        statusDiv.textContent = `${data.username}の番です`;
       }
     });
 
