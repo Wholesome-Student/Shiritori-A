@@ -1,0 +1,23 @@
+/*基準を1rem=10pxに設定*/
+html {
+    font-size: 62.5%;
+}
+
+h1 {
+    font-size: 5rem;
+}
+
+p {
+    font-size: 15rem;
+}
+
+body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-flow: column;
+}
+
+.win {
+    margin: auto;
+}
