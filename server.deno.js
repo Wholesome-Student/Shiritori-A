@@ -110,7 +110,7 @@ serve((req) => {
           } else {
             console.error(`User ${data.username} not found`);
           }
-        } else if (data.tyoe === "end" && data.username) {
+        } else if (data.type === "end" && data.username) {
           const usernames = Object.keys(users);
           const nextUserIndex =
             (usernames.indexOf(data.username) + 1) % usernames.length;

@@ -136,6 +136,7 @@ window.onload = () => {
               if (count < 0) {  // カウントが0になったら
                   clearInterval(intervalId);  // タイマーを停止
                   countdownElement.textContent = 'タイマー終了';  // 終了メッセージを表示
+                  socket.send(JSON.stringify({ type: "end", username }));
               }
             }, 1000);
           }
