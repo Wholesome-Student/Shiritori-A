@@ -1,6 +1,7 @@
 const socket = new WebSocket(`wss://${location.host}/ws`);
 let username = null;
 let selectedImageId = null;
+let count = 30;  // カウントの開始値
 
 socket.addEventListener('error', (error) => {
   console.error(`websocket error:${error}`);
@@ -17,6 +18,8 @@ window.onload = () => {
     const setUsernameBtn = document.getElementById("setUsernameBtn");
     const resetBtn = document.getElementById("resetButton");
     const input2 = document.getElementById('input');
+
+    const countdownElement = document.getElementById('time');  // カウントを表示する要素を取得
 
     input2.addEventListener('input', function() {
       // フィールドに入力された文字数に応じて幅を変更
@@ -99,6 +102,15 @@ window.onload = () => {
         ) {
           btn.disabled = false;
           input.disabled = false;
+          const intervalId = setInterval(function() {
+            countdownElement.textContent = count;  // HTML要素に現在のカウントを表示
+            count--;  // カウントを1減らす
+    
+            if (count < 0) {  // カウントが0になったら
+                clearInterval(intervalId);  // タイマーを停止
+                countdownElement.textContent = 'タイマー終了';  // 終了メッセージを表示
+            }
+          }, 1000);
         }
       }
     });

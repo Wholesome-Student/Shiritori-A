@@ -72,9 +72,9 @@ body {
 
 .opponent {
     display: grid;
-    grid-template-columns: 70% 30%;
+    grid-template-columns: 60% 20% 20%;
     grid-template-areas: 
-    "word card";
+    "word time card";
 }
 
 .previous {
@@ -84,6 +84,13 @@ body {
 
 #previousWord {
     font-size: 4.5rem;
+}
+
+#time {
+    grid-area: time;
+    text-align: center;
+    margin: auto;
+    font-size: 6rem;
 }
 
 .previousCards {
