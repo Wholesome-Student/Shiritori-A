@@ -2,6 +2,7 @@ const socket = new WebSocket(`wss://${location.host}/ws`);
 let username = null;
 
 let selectedImageId = undefined;
+let intervalId = null;
 let count = 30;  // カウントの開始値
 
 
@@ -115,18 +116,33 @@ window.onload = () => {
         ) {
           btn.disabled = false;
           input.disabled = false;
-          const intervalId = setInterval(function() {
-            countdownElement.textContent = count;  // HTML要素に現在のカウントを表示
-            count--;  // カウントを1減らす
-    
-            if (count < 0) {  // カウントが0になったら
-                clearInterval(intervalId);  // タイマーを停止
-                countdownElement.textContent = 'タイマー終了';  // 終了メッセージを表示
-            }
-          }, 1000);
+        } if (
+          data.sender === "System" &&
+          data.message === "リセットします"
+        ) {
+          location.reload();
         }
       } else if (data.type === "turn") {
         statusDiv.textContent = `${data.username}の番です`;
+        if (data.username === username) {
+          if (!intervalId) {
+            intervalId = setInterval(function() {
+              countdownElement.textContent = count;  // HTML要素に現在のカウントを表示
+                count--;  // カウントを1減らす
+    
+              if (count < 0) {  // カウントが0になったら
+                  clearInterval(intervalId);  // タイマーを停止
+                  countdownElement.textContent = 'タイマー終了';  // 終了メッセージを表示
+              }
+            }, 1000);
+          }
+        } else {
+          console.log("Not my turn");
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        }
       }
     });
 

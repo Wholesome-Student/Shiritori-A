@@ -262,7 +262,7 @@ serve((req) => {
           }
         } else if (data.type === "reset") {
           history = ["しりとり"];
-          broadcastMessage("System", "リセットしましす");
+          broadcastMessage("System", "リセットします");
           checkAndStartChat();
         } else {
           console.error("Invalid message format:", data);
