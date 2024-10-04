@@ -1,4 +1,4 @@
-const socket = new WebSocket(`ws://${location.host}/ws`);
+const socket = new WebSocket(`wss://${location.host}/ws`);
 const resetBtn = document.getElementById("resetButton");
 const queryString = window.location.search;
 
